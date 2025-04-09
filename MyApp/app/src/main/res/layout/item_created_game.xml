@@ -23,6 +23,15 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <LinearLayout
+            android:id="@+id/layoutGameDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="4dp">
+            <!-- Game details will be added here programmatically -->
+        </LinearLayout>
+
         <ImageView
             android:id="@+id/ivGameImage"
             android:layout_width="match_parent"
@@ -36,7 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Edit" />
+            android:text="Play" />
 
         <Button
             android:id="@+id/btnShare"

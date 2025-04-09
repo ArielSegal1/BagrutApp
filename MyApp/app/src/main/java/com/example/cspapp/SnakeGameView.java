@@ -40,14 +40,18 @@ public class SnakeGameView extends SurfaceView implements Runnable {
     // Game state
     private int score = 0;
     private long nextFrameTime;
-    private final long FPS = 10;
+    private long FPS = 10;
     private final Random random = new Random();
 
-    public SnakeGameView(Context context) {
+    // Update the constructor to use the speed parameter correctly
+    public SnakeGameView(Context context, int gameSpeed) {
         super(context);
 
         surfaceHolder = getHolder();
         paint = new Paint();
+
+        // Set FPS based on the game speed
+        this.FPS = gameSpeed;
 
         // Calculate how many blocks high based on the height of the screen
         NUM_BLOCKS_HIGH = getResources().getDisplayMetrics().heightPixels / blockSize;
