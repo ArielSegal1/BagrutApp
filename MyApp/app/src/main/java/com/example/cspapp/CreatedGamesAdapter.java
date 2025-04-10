@@ -18,6 +18,7 @@ public class CreatedGamesAdapter extends RecyclerView.Adapter<CreatedGamesAdapte
 
     public interface OnGameClickListener {
         void onGameClick(GameItem game);
+        void onShareClick(GameItem game);
     }
 
     public CreatedGamesAdapter(List<GameItem> gamesList, OnGameClickListener listener) {
@@ -45,6 +46,9 @@ public class CreatedGamesAdapter extends RecyclerView.Adapter<CreatedGamesAdapte
         // Set click listener for the play button
         holder.btnEdit.setText("Play"); // Repurpose the edit button
         holder.btnEdit.setOnClickListener(v -> listener.onGameClick(game));
+
+        // Set click listener for the share button
+        holder.btnShare.setOnClickListener(v -> listener.onShareClick(game));
     }
 
     @Override

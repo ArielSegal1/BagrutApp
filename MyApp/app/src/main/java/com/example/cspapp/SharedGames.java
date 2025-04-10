@@ -2,19 +2,31 @@ package com.example.cspapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
-public class SharedGames extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.List;
+
+public class SharedGames extends AppCompatActivity implements SharedGamesAdapter.OnSharedGameClickListener {
 
     private BottomNavigationView bottomNavigationView;
     private FloatingActionButton fabAddGame;
     private RecyclerView rvSharedGames;
+    private FirebaseFirestore db;
+    private List<SharedGameItem> sharedGames = new ArrayList<>();
+    private SharedGamesAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,10 +34,21 @@ public class SharedGames extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_shared_games);
 
+        // Initialize Firestore
+        db = FirebaseFirestore.getInstance();
+
         // Initialize UI elements
         bottomNavigationView = findViewById(R.id.bottomNavigation);
         fabAddGame = findViewById(R.id.fabAddGame);
         rvSharedGames = findViewById(R.id.rvSharedGames);
+
+        // Set up RecyclerView
+        adapter = new SharedGamesAdapter(sharedGames, this);
+        rvSharedGames.setLayoutManager(new LinearLayoutManager(this));
+        rvSharedGames.setAdapter(adapter);
+
+        // Load shared games
+        loadSharedGames();
 
         // Set up bottom navigation
         setupBottomNavigation();
@@ -35,6 +58,33 @@ public class SharedGames extends AppCompatActivity {
             Intent intent = new Intent(SharedGames.this, CreateGame.class);
             startActivity(intent);
         });
+    }
+
+    private void loadSharedGames() {
+        db.collection("sharedGames")
+                .orderBy("sharedAt", Query.Direction.DESCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    sharedGames.clear();
+                    for (DocumentSnapshot docRef : queryDocumentSnapshots.getDocuments()) {
+                        String id = docRef.getId();
+                        String name = docRef.getString("name");
+                        String type = docRef.getString("type");
+                        int speed = docRef.getLong("speed").intValue();
+                        String creatorId = docRef.getString("creatorId");
+                        String creatorName = docRef.getString("creatorName");
+                        long sharedAt = docRef.getLong("sharedAt");
+
+                        SharedGameItem game = new SharedGameItem(
+                                id, name, type, speed, creatorId, creatorName, sharedAt);
+                        sharedGames.add(game);
+                    }
+                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(SharedGames.this, "Error loading shared games: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void setupBottomNavigation() {
@@ -60,9 +110,19 @@ public class SharedGames extends AppCompatActivity {
     }
 
     @Override
+    public void onPlayClick(SharedGameItem game) {
+        // For now, we only support Snake Game
+        Intent intent = new Intent(SharedGames.this, SnakeGameActivity.class);
+        intent.putExtra("GAME_SPEED", game.getSpeed());
+        startActivity(intent);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         // Make sure the correct navigation item is selected
         bottomNavigationView.setSelectedItemId(R.id.menuSharedGames);
+        // Refresh games list
+        loadSharedGames();
     }
 }

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -25,16 +26,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CreateGame extends AppCompatActivity {
+public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter.OnGameClickListener {
 
     private BottomNavigationView bottomNavigationView;
-    private Button btnChooseGame, btnGameSettings, btnCreateGame;
+    private Button btnChooseGame, btnName, btnGameSettings, btnCreateGame;
     private RecyclerView rvCreatedGames;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private String selectedGame = "Snake Game";
     private int gameSpeed = 10; // Default speed
     private String gameName = "";
+    private List<GameItem> userGames = new ArrayList<>();
+    private CreatedGamesAdapter gamesAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,33 +52,18 @@ public class CreateGame extends AppCompatActivity {
         // Initialize UI elements
         bottomNavigationView = findViewById(R.id.bottomNavigation);
         btnChooseGame = findViewById(R.id.btnChooseGame);
+        btnName = findViewById(R.id.btnName);
         btnGameSettings = findViewById(R.id.btnGameSettings);
-        rvCreatedGames = findViewById(R.id.rvCreatedGames);
-
-        // Add Create Game button
         btnCreateGame = findViewById(R.id.btnCreateGame);
-        if (btnCreateGame == null) {
-            // If button doesn't exist yet, add it programmatically
-            btnCreateGame = new Button(this);
-            btnCreateGame.setId(View.generateViewId());
-            btnCreateGame.setText("Create Game");
-            btnCreateGame.setBackgroundTintList(btnChooseGame.getBackgroundTintList());
-            btnCreateGame.setTextSize(18);
-            btnCreateGame.setAllCaps(false);
-            btnCreateGame.setPadding(12, 12, 12, 12);
-
-            // Add it to the layout
-            ((android.view.ViewGroup) btnGameSettings.getParent()).addView(btnCreateGame,
-                    new android.view.ViewGroup.LayoutParams(
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
-        }
+        rvCreatedGames = findViewById(R.id.rvCreatedGames);
 
         // Set up bottom navigation
         setupBottomNavigation();
 
         // Set up RecyclerView
+        gamesAdapter = new CreatedGamesAdapter(userGames, this);
         rvCreatedGames.setLayoutManager(new LinearLayoutManager(this));
+        rvCreatedGames.setAdapter(gamesAdapter);
         loadUserGames();
 
         // Set up button click listeners
@@ -84,8 +72,35 @@ public class CreateGame extends AppCompatActivity {
 
     private void setupButtonListeners() {
         btnChooseGame.setOnClickListener(v -> showGameSelectionDialog());
+        btnName.setOnClickListener(v -> showNameDialog());
         btnGameSettings.setOnClickListener(v -> showGameSettingsDialog());
         btnCreateGame.setOnClickListener(v -> showCreateGameDialog());
+    }
+
+    private void showNameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_create_game, null);
+
+        EditText nameInput = view.findViewById(R.id.etGameName);
+
+        // Pre-fill with existing name if available
+        if (!gameName.isEmpty()) {
+            nameInput.setText(gameName);
+        }
+
+        builder.setView(view)
+                .setTitle("Game Name")
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String name = nameInput.getText().toString().trim();
+                    if (!name.isEmpty()) {
+                        gameName = name;
+                        // Update button text to show selected name
+                        btnName.setText("Name: " + gameName);
+                    }
+                })
+                .setNegativeButton("Cancel", null);
+
+        builder.create().show();
     }
 
     private void showGameSelectionDialog() {
@@ -95,7 +110,7 @@ public class CreateGame extends AppCompatActivity {
         builder.setTitle("Select Game Type")
                 .setItems(gameOptions, (dialog, which) -> {
                     selectedGame = gameOptions[which];
-                    btnChooseGame.setText(selectedGame);
+                    btnChooseGame.setText("Game: " + selectedGame);
                 });
         builder.create().show();
     }
@@ -114,9 +129,8 @@ public class CreateGame extends AppCompatActivity {
         speedSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // Map 0-10 to 5-15 for actual game speed
-                gameSpeed = progress + 5;
-                speedValueText.setText(String.valueOf(gameSpeed));
+                int actualSpeed = progress + 5; // Map 0-10 to 5-15
+                speedValueText.setText(String.valueOf(actualSpeed));
             }
 
             @Override
@@ -129,8 +143,8 @@ public class CreateGame extends AppCompatActivity {
         builder.setView(view)
                 .setTitle("Game Settings")
                 .setPositiveButton("Save", (dialog, which) -> {
-                    Toast.makeText(CreateGame.this,
-                            "Speed set to: " + gameSpeed, Toast.LENGTH_SHORT).show();
+                    gameSpeed = speedSeekBar.getProgress() + 5; // Map 0-10 to 5-15
+                    btnGameSettings.setText("Speed: " + gameSpeed);
                 })
                 .setNegativeButton("Cancel", null);
 
@@ -138,21 +152,22 @@ public class CreateGame extends AppCompatActivity {
     }
 
     private void showCreateGameDialog() {
+        // Check if name has been set
+        if (gameName.isEmpty()) {
+            Toast.makeText(this, "Please set a game name first", Toast.LENGTH_SHORT).show();
+            showNameDialog();
+            return;
+        }
+
+        // Show confirmation dialog with game details
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = getLayoutInflater().inflate(R.layout.dialog_create_game, null);
-
-        EditText nameInput = view.findViewById(R.id.etGameName);
-
-        builder.setView(view)
-                .setTitle("Create Game")
+        builder.setTitle("Create Game")
+                .setMessage("Create game with the following settings?\n\n" +
+                        "Name: " + gameName + "\n" +
+                        "Type: " + selectedGame + "\n" +
+                        "Speed: " + gameSpeed)
                 .setPositiveButton("Create", (dialog, which) -> {
-                    gameName = nameInput.getText().toString().trim();
-                    if (gameName.isEmpty()) {
-                        Toast.makeText(CreateGame.this,
-                                "Please enter a game name", Toast.LENGTH_SHORT).show();
-                    } else {
-                        saveGameToFirestore();
-                    }
+                    saveGameToFirestore();
                 })
                 .setNegativeButton("Cancel", null);
 
@@ -180,13 +195,17 @@ public class CreateGame extends AppCompatActivity {
                 .collection("games")
                 .add(gameData)
                 .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(CreateGame.this,
-                            "Game created successfully!", Toast.LENGTH_SHORT).show();
-                    loadUserGames(); // Refresh the games list
+                    Toast.makeText(CreateGame.this, "Game created successfully!",
+                            Toast.LENGTH_SHORT).show();
+                    // Reset game name
+                    gameName = "";
+                    btnName.setText("Name");
+                    // Refresh the games list
+                    loadUserGames();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(CreateGame.this,
-                            "Error creating game: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CreateGame.this, "Error creating game: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -199,21 +218,77 @@ public class CreateGame extends AppCompatActivity {
                 .collection("games")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<GameItem> gameList = new ArrayList<>();
+                    userGames.clear();
+                    for (DocumentSnapshot docRef : queryDocumentSnapshots.getDocuments()) {
+                        String id = docRef.getId();
+                        String name = docRef.getString("name");
+                        String type = docRef.getString("type");
+                        int speed = docRef.getLong("speed").intValue();
 
-                    queryDocumentSnapshots.forEach(document -> {
-                        String id = document.getId();
-                        String name = document.getString("name");
-                        String type = document.getString("type");
-                        int speed = document.getLong("speed").intValue();
+                        GameItem game = new GameItem(id, name, type, speed);
+                        userGames.add(game);
+                    }
+                    gamesAdapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(CreateGame.this, "Error loading games: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
 
-                        gameList.add(new GameItem(id, name, type, speed));
-                    });
+    @Override
+    public void onGameClick(GameItem game) {
+        launchSelectedGame(game);
+    }
 
-                    // Set up adapter
-                    CreatedGamesAdapter adapter = new CreatedGamesAdapter(gameList,
-                            gameId -> launchSelectedGame(gameId));
-                    rvCreatedGames.setAdapter(adapter);
+    @Override
+    public void onShareClick(GameItem game) {
+        shareGame(game);
+    }
+
+    private void shareGame(GameItem game) {
+        if (mAuth.getCurrentUser() == null) {
+            Toast.makeText(this, "You must be logged in to share games",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = mAuth.getCurrentUser().getUid();
+
+        // Get the user's username
+        db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String username = documentSnapshot.getString("username");
+                    if (username == null || username.isEmpty()) {
+                        username = "Anonymous";
+                    }
+
+                    // Create shared game data
+                    Map<String, Object> sharedGameData = new HashMap<>();
+                    sharedGameData.put("name", game.getName());
+                    sharedGameData.put("type", game.getType());
+                    sharedGameData.put("speed", game.getSpeed());
+                    sharedGameData.put("creatorId", userId);
+                    sharedGameData.put("creatorName", username);
+                    sharedGameData.put("sharedAt", System.currentTimeMillis());
+                    sharedGameData.put("originalGameId", game.getId());
+
+                    // Add to shared games collection
+                    db.collection("sharedGames")
+                            .add(sharedGameData)
+                            .addOnSuccessListener(documentReference -> {
+                                Toast.makeText(CreateGame.this, "Game shared successfully!",
+                                        Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(CreateGame.this, "Error sharing game: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(CreateGame.this, "Error getting user data: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 
