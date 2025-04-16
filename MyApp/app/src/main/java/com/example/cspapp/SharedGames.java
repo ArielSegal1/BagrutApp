@@ -111,8 +111,17 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
 
     @Override
     public void onPlayClick(SharedGameItem game) {
-        // For now, we only support Snake Game
-        Intent intent = new Intent(SharedGames.this, SnakeGameActivity.class);
+        Intent intent;
+
+        if (game.getType().equals("Snake Game")) {
+            intent = new Intent(SharedGames.this, SnakeGameActivity.class);
+        } else if (game.getType().equals("Space Invaders")) {
+            intent = new Intent(SharedGames.this, SpaceInvadersGameActivity.class);
+        } else {
+            // Default to Snake Game
+            intent = new Intent(SharedGames.this, SnakeGameActivity.class);
+        }
+
         intent.putExtra("GAME_SPEED", game.getSpeed());
         startActivity(intent);
     }

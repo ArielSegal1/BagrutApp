@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SpaceInvadersGameActivity">
+
+    <!-- Container for the game view -->
+    <FrameLayout
+        android:id="@+id/gameContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Control buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Left movement button -->
+        <Button
+            android:id="@+id/btnLeft"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="←"
+            android:textSize="24sp"
+            android:backgroundTint="#444444"
+            android:alpha="0.7" />
+
+        <!-- Fire button -->
+        <Button
+            android:id="@+id/btnFire"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:text="FIRE"
+            android:textSize="18sp"
+            android:backgroundTint="#FF4444"
+            android:alpha="0.7" />
+
+        <!-- Right movement button -->
+        <Button
+            android:id="@+id/btnRight"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="→"
+            android:textSize="24sp"
+            android:backgroundTint="#444444"
+            android:alpha="0.7" />
+    </LinearLayout>
+
+</FrameLayout>

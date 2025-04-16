@@ -104,7 +104,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
     }
 
     private void showGameSelectionDialog() {
-        final String[] gameOptions = {"Snake Game"};
+        final String[] gameOptions = {"Snake Game", "Space Invaders"};
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select Game Type")
@@ -293,8 +293,17 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
     }
 
     private void launchSelectedGame(GameItem game) {
-        // For now, we only have Snake Game
-        Intent intent = new Intent(CreateGame.this, SnakeGameActivity.class);
+        Intent intent;
+
+        if (game.getType().equals("Snake Game")) {
+            intent = new Intent(CreateGame.this, SnakeGameActivity.class);
+        } else if (game.getType().equals("Space Invaders")) {
+            intent = new Intent(CreateGame.this, SpaceInvadersGameActivity.class);
+        } else {
+            // Default to Snake Game
+            intent = new Intent(CreateGame.this, SnakeGameActivity.class);
+        }
+
         intent.putExtra("GAME_SPEED", game.getSpeed());
         startActivity(intent);
     }
