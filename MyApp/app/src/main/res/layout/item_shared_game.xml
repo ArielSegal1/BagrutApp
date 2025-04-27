@@ -10,7 +10,6 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#7B1FA2"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -18,33 +17,51 @@
             android:id="@+id/tvGameTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Flappy Bird -Harry Potter style"
-            android:textColor="@android:color/black"
+            android:text="Game Title"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCreator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="By Creator"
+            android:textStyle="italic" />
 
         <ImageView
             android:id="@+id/ivGameImage"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="150dp"
             android:layout_marginTop="8dp"
-            android:contentDescription="Game Preview"
             android:scaleType="centerCrop"
-            android:text="_IMAGE_" />
+            android:visibility="gone"
+            android:contentDescription="Game image" />
+
+        <LinearLayout
+            android:id="@+id/layoutGameDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvGameType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Type: Snake Game" />
+
+            <TextView
+                android:id="@+id/tvGameSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speed: 10" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnDownload"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="DOWNLOAD BUTTON" />
-
-        <TextView
-            android:id="@+id/tvCreator"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="By coolGamer178"
-            android:textColor="@android:color/black" />
+            android:text="Play Game" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

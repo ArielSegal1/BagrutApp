@@ -8,6 +8,7 @@ public class SharedGameItem {
     private String creatorId;
     private String creatorName;
     private long sharedAt;
+    private String imageUrl;
 
     public SharedGameItem(String id, String name, String type, int speed,
                           String creatorId, String creatorName, long sharedAt) {
@@ -20,6 +21,18 @@ public class SharedGameItem {
         this.sharedAt = sharedAt;
     }
 
+    public SharedGameItem(String id, String name, String type, int speed,
+                          String creatorId, String creatorName, long sharedAt, String imageUrl) {
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.speed = speed;
+        this.creatorId = creatorId;
+        this.creatorName = creatorName;
+        this.sharedAt = sharedAt;
+        this.imageUrl = imageUrl;
+    }
+
     public String getId() { return id; }
     public String getName() { return name; }
     public String getType() { return type; }
@@ -27,4 +40,9 @@ public class SharedGameItem {
     public String getCreatorId() { return creatorId; }
     public String getCreatorName() { return creatorName; }
     public long getSharedAt() { return sharedAt; }
+    public String getImageUrl() { return imageUrl; }
+
+    public boolean hasImage() {
+        return imageUrl != null && !imageUrl.isEmpty();
+    }
 }

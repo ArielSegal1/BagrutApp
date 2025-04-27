@@ -352,6 +352,10 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                     sharedGameData.put("sharedAt", System.currentTimeMillis());
                     sharedGameData.put("originalGameId", game.getId());
 
+                    if (game.hasImage()) {
+                        sharedGameData.put("imageUrl", game.getImageUrl());
+                    }
+
                     // Add to shared games collection
                     db.collection("sharedGames")
                             .add(sharedGameData)

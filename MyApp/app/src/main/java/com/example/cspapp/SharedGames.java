@@ -74,9 +74,10 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
                         String creatorId = docRef.getString("creatorId");
                         String creatorName = docRef.getString("creatorName");
                         long sharedAt = docRef.getLong("sharedAt");
+                        String imageUrl = docRef.getString("imageUrl");
 
                         SharedGameItem game = new SharedGameItem(
-                                id, name, type, speed, creatorId, creatorName, sharedAt);
+                                id, name, type, speed, creatorId, creatorName, sharedAt, imageUrl);
                         sharedGames.add(game);
                     }
                     adapter.notifyDataSetChanged();
@@ -86,7 +87,6 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
                             Toast.LENGTH_SHORT).show();
                 });
     }
-
     private void setupBottomNavigation() {
         // Set the selected item to Shared Games
         bottomNavigationView.setSelectedItemId(R.id.menuSharedGames);
