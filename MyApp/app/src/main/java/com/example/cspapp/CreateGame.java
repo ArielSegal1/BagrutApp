@@ -26,10 +26,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.net.Uri;
+import androidx.annotation.Nullable;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import java.util.UUID;
+
 public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter.OnGameClickListener {
 
     private BottomNavigationView bottomNavigationView;
-    private Button btnChooseGame, btnName, btnGameSettings, btnCreateGame;
+    private Button btnChooseGame, btnName, btnGameSettings, btnCreateGame, btnImages;
     private RecyclerView rvCreatedGames;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -53,6 +61,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         bottomNavigationView = findViewById(R.id.bottomNavigation);
         btnChooseGame = findViewById(R.id.btnChooseGame);
         btnName = findViewById(R.id.btnName);
+        btnImages = findViewById(R.id.btnImages);
         btnGameSettings = findViewById(R.id.btnGameSettings);
         btnCreateGame = findViewById(R.id.btnCreateGame);
         rvCreatedGames = findViewById(R.id.rvCreatedGames);
@@ -71,6 +80,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
     }
 
     private void setupButtonListeners() {
+        btnImages.setOnClickListener(v -> openImagePicker());
         btnChooseGame.setOnClickListener(v -> showGameSelectionDialog());
         btnName.setOnClickListener(v -> showNameDialog());
         btnGameSettings.setOnClickListener(v -> showGameSettingsDialog());
@@ -174,6 +184,29 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         builder.create().show();
     }
 
+    private Uri selectedImageUri = null;
+    private static final int PICK_IMAGE_REQUEST = 1;
+
+    // Method to open image picker when image button is clicked
+    private void openImagePicker() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Image"), PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
+            selectedImageUri = data.getData();
+            btnImages.setText("Image Selected");
+            // You could preview the image if desired
+        }
+    }
+
     private void saveGameToFirestore() {
         if (mAuth.getCurrentUser() == null) {
             Toast.makeText(this, "You must be logged in to create games",
@@ -183,27 +216,71 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
 
         String userId = mAuth.getCurrentUser().getUid();
 
-        // Create game data
+        // Show progress dialog
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("Creating Game");
+        progressDialog.setMessage("Please wait while we save your game...");
+        progressDialog.show();
+
+        final String gameId = UUID.randomUUID().toString();
+
+        // First create game data without image URL
         Map<String, Object> gameData = new HashMap<>();
         gameData.put("name", gameName);
         gameData.put("type", selectedGame);
         gameData.put("speed", gameSpeed);
         gameData.put("createdAt", System.currentTimeMillis());
 
-        // Add to user's games collection
+        // If image was selected, upload it first
+        if (selectedImageUri != null) {
+            // Create a reference to the storage location
+            StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                    .child("game_images")
+                    .child(userId)
+                    .child(gameId + ".jpg");
+
+            // Upload the file
+            storageRef.putFile(selectedImageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        // Get the download URL
+                        storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                            // Add the image URL to the game data
+                            gameData.put("imageUrl", uri.toString());
+
+                            // Now save the complete game data to Firestore
+                            saveGameDataToFirestore(userId, gameData, progressDialog);
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(CreateGame.this, "Error uploading image: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // No image selected, save game data without image
+            saveGameDataToFirestore(userId, gameData, progressDialog);
+        }
+    }
+
+    private void saveGameDataToFirestore(String userId, Map<String, Object> gameData,
+                                         ProgressDialog progressDialog) {
         db.collection("users").document(userId)
                 .collection("games")
                 .add(gameData)
                 .addOnSuccessListener(documentReference -> {
+                    progressDialog.dismiss();
                     Toast.makeText(CreateGame.this, "Game created successfully!",
                             Toast.LENGTH_SHORT).show();
-                    // Reset game name
+                    // Reset game name and image
                     gameName = "";
+                    selectedImageUri = null;
                     btnName.setText("Name");
+                    btnImages.setText("Images");
                     // Refresh the games list
                     loadUserGames();
                 })
                 .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
                     Toast.makeText(CreateGame.this, "Error creating game: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
@@ -224,8 +301,9 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                         String name = docRef.getString("name");
                         String type = docRef.getString("type");
                         int speed = docRef.getLong("speed").intValue();
+                        String imageUrl = docRef.getString("imageUrl");
 
-                        GameItem game = new GameItem(id, name, type, speed);
+                        GameItem game = new GameItem(id, name, type, speed, imageUrl);
                         userGames.add(game);
                     }
                     gamesAdapter.notifyDataSetChanged();
