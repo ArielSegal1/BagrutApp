@@ -1,21 +1,33 @@
 package com.example.cspapp;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import androidx.annotation.Nullable;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 public class SnakeGameView extends SurfaceView implements Runnable {
 
     private Thread gameThread;
     private volatile boolean isPlaying;
     private boolean isGameOver;
+
+    // Background image
+    private Bitmap backgroundImage;
+    private boolean isBackgroundLoaded = false;
+    private String imageUrl;
 
     // Game objects
     private final ArrayList<Point> snakeBody = new ArrayList<>();
@@ -36,6 +48,7 @@ public class SnakeGameView extends SurfaceView implements Runnable {
     // Drawing objects
     private final SurfaceHolder surfaceHolder;
     private final Paint paint;
+    private final Context context;
 
     // Game state
     private int score = 0;
@@ -43,9 +56,11 @@ public class SnakeGameView extends SurfaceView implements Runnable {
     private long FPS = 10;
     private final Random random = new Random();
 
-    // Update the constructor to use the speed parameter correctly
-    public SnakeGameView(Context context, int gameSpeed) {
+    // Update the constructor to use the speed parameter and image URL
+    public SnakeGameView(Context context, int gameSpeed, @Nullable String imageUrl) {
         super(context);
+        this.context = context;
+        this.imageUrl = imageUrl;
 
         surfaceHolder = getHolder();
         paint = new Paint();
@@ -64,6 +79,32 @@ public class SnakeGameView extends SurfaceView implements Runnable {
 
         // First food
         spawnFood();
+
+        // Load background image if URL is provided
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            loadBackgroundImage();
+        }
+    }
+
+    private void loadBackgroundImage() {
+        try {
+            Glide.with(context)
+                    .asBitmap()
+                    .load(imageUrl)
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                            // Scale the bitmap to fit the screen
+                            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+                            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+                            backgroundImage = Bitmap.createScaledBitmap(resource, screenWidth, screenHeight, true);
+                            isBackgroundLoaded = true;
+                        }
+                    });
+        } catch (Exception e) {
+            // Handle error silently - game will continue without background
+            isBackgroundLoaded = false;
+        }
     }
 
     private void spawnFood() {
@@ -175,8 +216,20 @@ public class SnakeGameView extends SurfaceView implements Runnable {
         if (surfaceHolder.getSurface().isValid()) {
             Canvas canvas = surfaceHolder.lockCanvas();
 
-            // Clear screen and set background
-            canvas.drawColor(Color.BLACK);
+            // Draw background - either image or solid color
+            if (isBackgroundLoaded && backgroundImage != null) {
+                // Draw the background image
+                canvas.drawBitmap(backgroundImage, 0, 0, null);
+
+                // Add a semi-transparent overlay to make game elements more visible
+                paint.setColor(Color.BLACK);
+                paint.setAlpha(100); // 40% opacity
+                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+                paint.setAlpha(255); // Reset to full opacity
+            } else {
+                // Default background
+                canvas.drawColor(Color.BLACK);
+            }
 
             // Draw snake
             paint.setColor(Color.GREEN);

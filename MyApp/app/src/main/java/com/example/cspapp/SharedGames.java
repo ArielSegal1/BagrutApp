@@ -122,6 +122,11 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
             intent = new Intent(SharedGames.this, SnakeGameActivity.class);
         }
 
+        // Pass the image URL to the game activity
+        if (game.hasImage()) {
+            intent.putExtra("IMAGE_URL", game.getImageUrl());
+        }
+
         intent.putExtra("GAME_SPEED", game.getSpeed());
         startActivity(intent);
     }

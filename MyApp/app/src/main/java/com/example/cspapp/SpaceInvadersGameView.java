@@ -1,6 +1,8 @@
 package com.example.cspapp;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -9,12 +11,21 @@ import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
+import androidx.annotation.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class SpaceInvadersGameView extends SurfaceView implements Runnable {
+
+    private String imageUrl;
+    private Bitmap backgroundImage;
+    private boolean isBackgroundLoaded = false;
 
     private Thread gameThread;
     private volatile boolean isPlaying;
@@ -75,6 +86,32 @@ public class SpaceInvadersGameView extends SurfaceView implements Runnable {
 
         // Initialize game
         initializeGame();
+    }
+
+    public void setBackgroundImageUrl(String url) {
+        this.imageUrl = url;
+        if (url != null && !url.isEmpty()) {
+            loadBackgroundImage();
+        }
+    }
+
+    // Add method to load background image using Glide
+    private void loadBackgroundImage() {
+        Glide.with(getContext())
+                .asBitmap()
+                .load(imageUrl)
+                .into(new SimpleTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                        // Scale the bitmap to fill the screen
+                        backgroundImage = Bitmap.createScaledBitmap(
+                                resource,
+                                screenWidth,
+                                screenHeight,
+                                false);
+                        isBackgroundLoaded = true;
+                    }
+                });
     }
 
     private void initializeGame() {
@@ -331,8 +368,20 @@ public class SpaceInvadersGameView extends SurfaceView implements Runnable {
         if (surfaceHolder.getSurface().isValid()) {
             Canvas canvas = surfaceHolder.lockCanvas();
 
-            // Clear screen with black background
-            canvas.drawColor(Color.BLACK);
+            // Draw background - either image or solid color
+            if (isBackgroundLoaded && backgroundImage != null) {
+                // Draw the background image
+                canvas.drawBitmap(backgroundImage, 0, 0, null);
+
+                // Add a semi-transparent overlay to make game elements more visible
+                paint.setColor(Color.BLACK);
+                paint.setAlpha(100); // 40% opacity
+                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+                paint.setAlpha(255); // Reset to full opacity
+            } else {
+                // Default black background
+                canvas.drawColor(Color.BLACK);
+            }
 
             // Draw player ship
             playerShip.draw(canvas, paint);
@@ -624,6 +673,23 @@ public class SpaceInvadersGameView extends SurfaceView implements Runnable {
             return health > 0;
         }
 
+        private void loadBackgroundImage() {
+            Glide.with(getContext())
+                    .asBitmap()
+                    .load(imageUrl)
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                            // Scale the bitmap to fill the screen
+                            backgroundImage = Bitmap.createScaledBitmap(
+                                    resource,
+                                    screenWidth,
+                                    screenHeight,
+                                    false);
+                            isBackgroundLoaded = true;
+                        }
+                    });
+        }
         public void draw(Canvas canvas, Paint paint) {
             // Change color based on health
             switch (health) {

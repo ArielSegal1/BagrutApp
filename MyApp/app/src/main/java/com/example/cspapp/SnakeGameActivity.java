@@ -18,11 +18,12 @@ public class SnakeGameActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Get speed from intent
+        // Get game details from intent
         int gameSpeed = getIntent().getIntExtra("GAME_SPEED", 10);
+        String imageUrl = getIntent().getStringExtra("IMAGE_URL");
 
-        // Create and set the game view with speed
-        gameView = new SnakeGameView(this, gameSpeed);
+        // Create and set the game view with speed and image URL
+        gameView = new SnakeGameView(this, gameSpeed, imageUrl);
         setContentView(gameView);
     }
 

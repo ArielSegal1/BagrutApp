@@ -387,6 +387,12 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         }
 
         intent.putExtra("GAME_SPEED", game.getSpeed());
+
+        // Pass the image URL to the game activity
+        if (game.hasImage()) {
+            intent.putExtra("IMAGE_URL", game.getImageUrl());
+        }
+
         startActivity(intent);
     }
 

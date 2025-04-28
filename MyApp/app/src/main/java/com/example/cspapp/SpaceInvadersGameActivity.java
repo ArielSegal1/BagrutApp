@@ -37,6 +37,12 @@ public class SpaceInvadersGameActivity extends AppCompatActivity {
         gameView = new SpaceInvadersGameView(this, gameSpeed);
         gameContainer.addView(gameView);
 
+        // Set background image if provided
+        String imageUrl = getIntent().getStringExtra("IMAGE_URL");
+        if (imageUrl != null) {
+            gameView.setBackgroundImageUrl(imageUrl);
+        }
+
         // Set up control buttons
         setupControlButtons();
     }
