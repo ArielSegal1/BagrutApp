@@ -75,9 +75,11 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
                         String creatorName = docRef.getString("creatorName");
                         long sharedAt = docRef.getLong("sharedAt");
                         String imageUrl = docRef.getString("imageUrl");
+                        String musicUrl = docRef.getString("musicUrl"); // Add this line
 
                         SharedGameItem game = new SharedGameItem(
-                                id, name, type, speed, creatorId, creatorName, sharedAt, imageUrl);
+                                id, name, type, speed, creatorId, creatorName,
+                                sharedAt, imageUrl, musicUrl); // Pass musicUrl
                         sharedGames.add(game);
                     }
                     adapter.notifyDataSetChanged();
@@ -125,6 +127,10 @@ public class SharedGames extends AppCompatActivity implements SharedGamesAdapter
         // Pass the image URL to the game activity
         if (game.hasImage()) {
             intent.putExtra("IMAGE_URL", game.getImageUrl());
+        }
+
+        if (game.hasMusic()) {
+            intent.putExtra("MUSIC_URL", game.getMusicUrl());
         }
 
         intent.putExtra("GAME_SPEED", game.getSpeed());

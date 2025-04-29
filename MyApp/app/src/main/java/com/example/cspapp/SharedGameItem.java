@@ -9,6 +9,7 @@ public class SharedGameItem {
     private String creatorName;
     private long sharedAt;
     private String imageUrl;
+    private String musicUrl;
 
     public SharedGameItem(String id, String name, String type, int speed,
                           String creatorId, String creatorName, long sharedAt) {
@@ -19,10 +20,11 @@ public class SharedGameItem {
         this.creatorId = creatorId;
         this.creatorName = creatorName;
         this.sharedAt = sharedAt;
+        this.musicUrl = musicUrl;
     }
 
     public SharedGameItem(String id, String name, String type, int speed,
-                          String creatorId, String creatorName, long sharedAt, String imageUrl) {
+                          String creatorId, String creatorName, long sharedAt, String imageUrl, String musicUrl) {
         this.id = id;
         this.name = name;
         this.type = type;
@@ -31,6 +33,7 @@ public class SharedGameItem {
         this.creatorName = creatorName;
         this.sharedAt = sharedAt;
         this.imageUrl = imageUrl;
+        this.musicUrl = musicUrl;
     }
 
     public String getId() { return id; }
@@ -44,5 +47,15 @@ public class SharedGameItem {
 
     public boolean hasImage() {
         return imageUrl != null && !imageUrl.isEmpty();
+
+
+    }
+    public String getMusicUrl() {
+        return musicUrl;
+    }
+
+    // Add method to check if music is available
+    public boolean hasMusic() {
+        return musicUrl != null && !musicUrl.isEmpty();
     }
 }

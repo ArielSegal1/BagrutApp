@@ -3,6 +3,7 @@ package com.example.cspapp;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,6 +22,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +30,10 @@ import java.util.Map;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+
 import android.net.Uri;
 import androidx.annotation.Nullable;
+import android.media.MediaPlayer;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import java.util.UUID;
@@ -37,7 +41,7 @@ import java.util.UUID;
 public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter.OnGameClickListener {
 
     private BottomNavigationView bottomNavigationView;
-    private Button btnChooseGame, btnName, btnGameSettings, btnCreateGame, btnImages;
+    private Button btnChooseGame, btnName, btnGameSettings, btnCreateGame, btnImages, btnMusic;
     private RecyclerView rvCreatedGames;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -46,6 +50,9 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
     private String gameName = "";
     private List<GameItem> userGames = new ArrayList<>();
     private CreatedGamesAdapter gamesAdapter;
+
+    private Uri selectedMusicUri = null;
+    private static final int PICK_MUSIC_REQUEST = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +69,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         btnChooseGame = findViewById(R.id.btnChooseGame);
         btnName = findViewById(R.id.btnName);
         btnImages = findViewById(R.id.btnImages);
+        btnMusic = findViewById(R.id.btnMusic);
         btnGameSettings = findViewById(R.id.btnGameSettings);
         btnCreateGame = findViewById(R.id.btnCreateGame);
         rvCreatedGames = findViewById(R.id.rvCreatedGames);
@@ -85,6 +93,14 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         btnName.setOnClickListener(v -> showNameDialog());
         btnGameSettings.setOnClickListener(v -> showGameSettingsDialog());
         btnCreateGame.setOnClickListener(v -> showCreateGameDialog());
+        btnMusic.setOnClickListener(v -> openMusicPicker());
+    }
+
+    private void openMusicPicker() {
+        Intent intent = new Intent();
+        intent.setType("audio/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Music"), PICK_MUSIC_REQUEST);
     }
 
     private void showNameDialog() {
@@ -203,7 +219,40 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                 && data != null && data.getData() != null) {
             selectedImageUri = data.getData();
             btnImages.setText("Image Selected");
-            // You could preview the image if desired
+        } else if (requestCode == PICK_MUSIC_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
+            selectedMusicUri = data.getData();
+            btnMusic.setText("Music Selected");
+
+            // Preview the selected music
+            previewSelectedMusic(selectedMusicUri);
+        }
+    }
+
+    private MediaPlayer mediaPlayer;
+
+    private void previewSelectedMusic(Uri musicUri) {
+        // Stop any currently playing music
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+        }
+
+        // Create a new MediaPlayer instance
+        mediaPlayer = new MediaPlayer();
+        try {
+            mediaPlayer.setDataSource(this, musicUri);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+
+            // Stop preview after 5 seconds
+            new Handler().postDelayed(() -> {
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                }
+            }, 5000);
+        } catch (IOException e) {
+            Toast.makeText(this, "Error playing music preview", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -224,43 +273,100 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
 
         final String gameId = UUID.randomUUID().toString();
 
-        // First create game data without image URL
+        // First create game data without URLs
         Map<String, Object> gameData = new HashMap<>();
         gameData.put("name", gameName);
         gameData.put("type", selectedGame);
         gameData.put("speed", gameSpeed);
         gameData.put("createdAt", System.currentTimeMillis());
 
-        // If image was selected, upload it first
+        // Count for tracking multiple uploads
+        final int[] uploadCount = {0};
+        final int totalUploads = (selectedImageUri != null ? 1 : 0) + (selectedMusicUri != null ? 1 : 0);
+
+        // If image was selected, upload it
         if (selectedImageUri != null) {
-            // Create a reference to the storage location
-            StorageReference storageRef = FirebaseStorage.getInstance().getReference()
-                    .child("game_images")
-                    .child(userId)
-                    .child(gameId + ".jpg");
+            uploadCount[0]++;
+            uploadImageToStorage(userId, gameId, gameData, progressDialog, uploadCount, totalUploads);
+        }
 
-            // Upload the file
-            storageRef.putFile(selectedImageUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        // Get the download URL
-                        storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                            // Add the image URL to the game data
-                            gameData.put("imageUrl", uri.toString());
+        // If music was selected, upload it
+        if (selectedMusicUri != null) {
+            uploadCount[0]++;
+            uploadMusicToStorage(userId, gameId, gameData, progressDialog, uploadCount, totalUploads);
+        }
 
-                            // Now save the complete game data to Firestore
-                            saveGameDataToFirestore(userId, gameData, progressDialog);
-                        });
-                    })
-                    .addOnFailureListener(e -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(CreateGame.this, "Error uploading image: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            // No image selected, save game data without image
+        // If no files to upload, save game data directly
+        if (totalUploads == 0) {
             saveGameDataToFirestore(userId, gameData, progressDialog);
         }
     }
+
+    // Add method to upload image to storage
+    private void uploadImageToStorage(String userId, String gameId, Map<String, Object> gameData,
+                                      ProgressDialog progressDialog, int[] uploadCount, int totalUploads) {
+        // Create a reference to the storage location
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                .child("game_images")
+                .child(userId)
+                .child(gameId + ".jpg");
+
+        // Upload the file
+        storageRef.putFile(selectedImageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Get the download URL
+                    storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        // Add the image URL to the game data
+                        gameData.put("imageUrl", uri.toString());
+
+                        // Check if all uploads are complete
+                        checkUploadsComplete(userId, gameData, progressDialog, uploadCount, totalUploads);
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(CreateGame.this, "Error uploading image: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void uploadMusicToStorage(String userId, String gameId, Map<String, Object> gameData,
+                                      ProgressDialog progressDialog, int[] uploadCount, int totalUploads) {
+        // Create a reference to the storage location
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                .child("game_music")
+                .child(userId)
+                .child(gameId + ".mp3");
+
+        // Upload the file
+        storageRef.putFile(selectedMusicUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Get the download URL
+                    storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        // Add the music URL to the game data
+                        gameData.put("musicUrl", uri.toString());
+
+                        // Check if all uploads are complete
+                        checkUploadsComplete(userId, gameData, progressDialog, uploadCount, totalUploads);
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(CreateGame.this, "Error uploading music: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    // Add method to check if all uploads are complete
+    private void checkUploadsComplete(String userId, Map<String, Object> gameData,
+                                      ProgressDialog progressDialog, int[] uploadCount, int totalUploads) {
+        uploadCount[0]--;
+        if (uploadCount[0] <= 0) {
+            // All uploads complete, save game data
+            saveGameDataToFirestore(userId, gameData, progressDialog);
+        }
+    }
+
 
     private void saveGameDataToFirestore(String userId, Map<String, Object> gameData,
                                          ProgressDialog progressDialog) {
@@ -271,11 +377,13 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                     progressDialog.dismiss();
                     Toast.makeText(CreateGame.this, "Game created successfully!",
                             Toast.LENGTH_SHORT).show();
-                    // Reset game name and image
+                    // Reset game name, image and music
                     gameName = "";
                     selectedImageUri = null;
+                    selectedMusicUri = null;
                     btnName.setText("Name");
                     btnImages.setText("Images");
+                    btnMusic.setText("Music");
                     // Refresh the games list
                     loadUserGames();
                 })
@@ -302,8 +410,9 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                         String type = docRef.getString("type");
                         int speed = docRef.getLong("speed").intValue();
                         String imageUrl = docRef.getString("imageUrl");
+                        String musicUrl = docRef.getString("musicUrl");
 
-                        GameItem game = new GameItem(id, name, type, speed, imageUrl);
+                        GameItem game = new GameItem(id, name, type, speed, imageUrl, musicUrl);
                         userGames.add(game);
                     }
                     gamesAdapter.notifyDataSetChanged();
@@ -356,6 +465,10 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
                         sharedGameData.put("imageUrl", game.getImageUrl());
                     }
 
+                    if (game.hasMusic()) {
+                        sharedGameData.put("musicUrl", game.getMusicUrl());
+                    }
+
                     // Add to shared games collection
                     db.collection("sharedGames")
                             .add(sharedGameData)
@@ -392,6 +505,9 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         if (game.hasImage()) {
             intent.putExtra("IMAGE_URL", game.getImageUrl());
         }
+        if (game.hasMusic()) {
+            intent.putExtra("MUSIC_URL", game.getMusicUrl());
+        }
 
         startActivity(intent);
     }
@@ -418,6 +534,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         });
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -425,5 +542,13 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         bottomNavigationView.setSelectedItemId(R.id.menuCreateGame);
         // Refresh games list
         loadUserGames();
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

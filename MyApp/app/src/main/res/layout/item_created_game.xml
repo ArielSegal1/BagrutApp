@@ -13,6 +13,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Existing TextView for game title -->
         <TextView
             android:id="@+id/tvGameTitle"
             android:layout_width="match_parent"
@@ -21,6 +22,7 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <!-- Existing ImageView for game image -->
         <ImageView
             android:id="@+id/ivGameImage"
             android:layout_width="match_parent"
@@ -30,6 +32,7 @@
             android:visibility="gone"
             android:contentDescription="Game image" />
 
+        <!-- Game details layout -->
         <LinearLayout
             android:id="@+id/layoutGameDetails"
             android:layout_width="match_parent"
@@ -37,6 +40,7 @@
             android:layout_marginTop="8dp"
             android:orientation="vertical">
 
+            <!-- Existing TextViews for game type and speed -->
             <TextView
                 android:id="@+id/tvGameType"
                 android:layout_width="match_parent"
@@ -48,8 +52,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Speed: 10" />
+
+            <!-- New TextView to show if music is available -->
+            <TextView
+                android:id="@+id/tvGameMusic"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Music: Not Available"
+                android:visibility="gone" />
         </LinearLayout>
 
+        <!-- Existing LinearLayout for buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

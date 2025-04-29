@@ -60,6 +60,16 @@ public class CreatedGamesAdapter extends RecyclerView.Adapter<CreatedGamesAdapte
             holder.ivGameImage.setVisibility(View.GONE);
         }
 
+        // Show music availability if music TextView exists
+        if (holder.tvGameMusic != null) {
+            if (game.hasMusic()) {
+                holder.tvGameMusic.setVisibility(View.VISIBLE);
+                holder.tvGameMusic.setText("Music: Available");
+            } else {
+                holder.tvGameMusic.setVisibility(View.GONE);
+            }
+        }
+
         // Set click listener for the play button
         holder.btnEdit.setText("Play"); // Repurpose the edit button
         holder.btnEdit.setOnClickListener(v -> listener.onGameClick(game));
@@ -77,6 +87,7 @@ public class CreatedGamesAdapter extends RecyclerView.Adapter<CreatedGamesAdapte
         TextView tvGameTitle;
         TextView tvGameType;
         TextView tvGameSpeed;
+        TextView tvGameMusic; // Add reference to music TextView
         Button btnEdit;
         Button btnShare;
         ImageView ivGameImage;
@@ -86,6 +97,7 @@ public class CreatedGamesAdapter extends RecyclerView.Adapter<CreatedGamesAdapte
             tvGameTitle = itemView.findViewById(R.id.tvGameTitle);
             tvGameType = itemView.findViewById(R.id.tvGameType);
             tvGameSpeed = itemView.findViewById(R.id.tvGameSpeed);
+            tvGameMusic = itemView.findViewById(R.id.tvGameMusic);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnShare = itemView.findViewById(R.id.btnShare);
             ivGameImage = itemView.findViewById(R.id.ivGameImage);

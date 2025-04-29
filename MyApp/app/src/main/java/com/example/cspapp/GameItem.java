@@ -6,13 +6,7 @@ public class GameItem {
     private String type;
     private int speed;
     private String imageUrl;
-
-    public GameItem(String id, String name, String type, int speed) {
-        this.id = id;
-        this.name = name;
-        this.type = type;
-        this.speed = speed;
-    }
+    private String musicUrl;
 
     public GameItem(String id, String name, String type, int speed, String imageUrl) {
         this.id = id;
@@ -20,6 +14,16 @@ public class GameItem {
         this.type = type;
         this.speed = speed;
         this.imageUrl = imageUrl;
+        this.musicUrl = null;
+    }
+
+    public GameItem(String id, String name, String type, int speed, String imageUrl, String musicUrl) {
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.speed = speed;
+        this.imageUrl = imageUrl;
+        this.musicUrl = musicUrl;
     }
 
     public String getId() {
@@ -42,7 +46,15 @@ public class GameItem {
         return imageUrl;
     }
 
+    public String getMusicUrl() {
+        return musicUrl;
+    }
+
     public boolean hasImage() {
         return imageUrl != null && !imageUrl.isEmpty();
+    }
+
+    public boolean hasMusic() {
+        return musicUrl != null && !musicUrl.isEmpty();
     }
 }
