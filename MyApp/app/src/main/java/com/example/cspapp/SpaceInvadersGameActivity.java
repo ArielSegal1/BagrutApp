@@ -1,8 +1,8 @@
 package com.example.cspapp;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -14,6 +14,7 @@ public class SpaceInvadersGameActivity extends AppCompatActivity {
 
     private SpaceInvadersGameView gameView;
     private Button btnLeft, btnRight, btnFire;
+    private MediaPlayer mediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,8 +44,31 @@ public class SpaceInvadersGameActivity extends AppCompatActivity {
             gameView.setBackgroundImageUrl(imageUrl);
         }
 
+        // Setup background music if available
+        String musicUrl = getIntent().getStringExtra("MUSIC_URL");
+        if (musicUrl != null && !musicUrl.isEmpty()) {
+            setupBackgroundMusic(musicUrl);
+        }
+
         // Set up control buttons
         setupControlButtons();
+    }
+
+    private void setupBackgroundMusic(String musicUrl) {
+        try {
+            // Initialize the media player
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(musicUrl);
+            mediaPlayer.setLooping(true); // Loop the music
+            mediaPlayer.prepare();
+
+            // Start playing when ready
+            mediaPlayer.setOnPreparedListener(mp -> mp.start());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // If there's an error, just continue without music
+        }
     }
 
     private void setupControlButtons() {
@@ -88,11 +112,33 @@ public class SpaceInvadersGameActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         gameView.resume();
+
+        // Resume music if it was playing
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         gameView.pause();
+
+        // Pause music when game is paused
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // Release media player resources
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }
