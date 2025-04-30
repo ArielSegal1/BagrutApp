@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -30,6 +32,7 @@ import java.util.Map;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import androidx.appcompat.widget.Toolbar;
 
 import android.net.Uri;
 import androidx.annotation.Nullable;
@@ -59,6 +62,11 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_game);
+
+        // Set up toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Create Game");
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -534,6 +542,40 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         });
     }
 
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.top_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menu_logout) {
+            // Show logout confirmation dialog
+            showLogoutDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showLogoutDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Account Options")
+                .setMessage("Are you sure you want to logout?")
+                .setPositiveButton("Logout", (dialog, which) -> {
+                    // Perform logout
+                    FirebaseAuth.getInstance().signOut();
+
+                    // Navigate back to MainMenu
+                    Intent intent = new Intent(this, MainMenu.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", null)
+                .create()
+                .show();
+    }
 
     @Override
     protected void onResume() {

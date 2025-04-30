@@ -7,12 +7,23 @@
     android:background="#808080"
     tools:context=".CreateGame">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#0047AB"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="@android:color/white" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -20,6 +31,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Rest of your layout remains the same -->
             <Button
                 android:id="@+id/btnChooseGame"
                 android:layout_width="match_parent"
@@ -87,7 +99,6 @@
                 android:textAllCaps="false"
                 android:textSize="18sp" />
 
-            <!-- Add CREATE GAME button here -->
             <Button
                 android:id="@+id/btnCreateGame"
                 android:layout_width="match_parent"
@@ -116,7 +127,6 @@
                 android:layout_marginTop="8dp"
                 tools:itemCount="2"
                 tools:listitem="@layout/item_created_game" />
-
         </LinearLayout>
     </ScrollView>
 
