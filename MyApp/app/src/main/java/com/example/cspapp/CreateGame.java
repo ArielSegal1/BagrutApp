@@ -13,6 +13,10 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import android.app.Activity;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -56,6 +60,7 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
 
     private Uri selectedMusicUri = null;
     private static final int PICK_MUSIC_REQUEST = 2;
+    private ActivityResultLauncher<Intent> musicPickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +87,10 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         btnCreateGame = findViewById(R.id.btnCreateGame);
         rvCreatedGames = findViewById(R.id.rvCreatedGames);
 
+
+        // Register activity result launcher
+        registerActivityResultLaunchers();
+
         // Set up bottom navigation
         setupBottomNavigation();
 
@@ -104,11 +113,30 @@ public class CreateGame extends AppCompatActivity implements CreatedGamesAdapter
         btnMusic.setOnClickListener(v -> openMusicPicker());
     }
 
+
+    private void registerActivityResultLaunchers() {
+        musicPickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK &&
+                            result.getData() != null &&
+                            result.getData().getData() != null) {
+
+                        selectedMusicUri = result.getData().getData();
+                        btnMusic.setText("Music Selected");
+
+                        // Preview the selected music
+                        previewSelectedMusic(selectedMusicUri);
+                    }
+                }
+        );
+    }
+
     private void openMusicPicker() {
         Intent intent = new Intent();
         intent.setType("audio/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select Music"), PICK_MUSIC_REQUEST);
+        musicPickerLauncher.launch(Intent.createChooser(intent, "Select Music"));
     }
 
     private void showNameDialog() {
