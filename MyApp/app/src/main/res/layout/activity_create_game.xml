@@ -66,16 +66,16 @@
                 android:textAllCaps="false"
                 android:textSize="18sp" />
 
-            <Button
-                android:id="@+id/btnSounds"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:backgroundTint="#0047AB"
-                android:padding="12dp"
-                android:text="Sounds"
-                android:textAllCaps="false"
-                android:textSize="18sp" />
+<!--            <Button-->
+<!--                android:id="@+id/btnSounds"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginTop="16dp"-->
+<!--                android:backgroundTint="#0047AB"-->
+<!--                android:padding="12dp"-->
+<!--                android:text="Sounds"-->
+<!--                android:textAllCaps="false"-->
+<!--                android:textSize="18sp" />-->
 
             <Button
                 android:id="@+id/btnMusic"
